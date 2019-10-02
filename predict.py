@@ -6,7 +6,9 @@
 @LastEditors: Aoru Xue
 @LastEditTime: 2019-10-01 10:03:36
 '''
+import cv2
 import torch
+import os
 #from vgg_ssd import build_ssd_model
 from model import BasketNet
 from torchvision import transforms
@@ -32,34 +34,44 @@ def center_form_to_corner_form(locations):
                       locations[..., :2] + locations[..., 2:] / 2], 1)
 
 def pic_test():
-    img = Image.open("./datasets/images/75.jpg").convert('RGB')
-    image = np.array(img,dtype = np.float32)
-    height, width, _ = image.shape
-    img = transform(img)
-    img = img.unsqueeze(0)
-    #img = img.cuda()
+    # img = Image.open("datasets/images/009814.jpg").convert('RGB')
+    # image = np.array(img,dtype = np.float32)
+
+
+    path='datasets/images/'
+    files=os.listdir(path)
     net = BasketNet()
-    
-    net.load_state_dict(torch.load("./ckpt/518.pth"))
-    #net.cuda()
+
+    net.load_state_dict(torch.load("./ckpt/61.pth"))
+    net.cuda()
     net.eval()
-    with torch.no_grad():
-        pred_confidence,pred_bbox = net(img)
-        
-        output = post_process(pred_confidence,pred_bbox, width=width, height=height)[0]
-        
-        boxes, labels, scores = [o.to("cpu").numpy() for o in output]
-        print(len(boxes))
-        #print(boxes)
-        #print(scores)
-        drawn_image = draw_bounding_boxes(image, boxes, labels, scores, ("__background__","basketball","volleyball")).astype(np.uint8)
-        
-        Image.fromarray(drawn_image).save("./a.jpg")
+    for file in files:
+        image=cv2.imread(path+file)
+        height, width, _ = image.shape
+        img = transform(Image.fromarray(image))
+        img = img.unsqueeze(0)
+        img = img.cuda()
+        with torch.no_grad():
+            pred_confidence,pred_bbox = net(img)
+
+            output = post_process(pred_confidence,pred_bbox, width=width, height=height)[0]
+
+            boxes, labels, scores = [o.to("cpu").numpy() for o in output]
+            print(boxes)
+            print(scores)
+            drawn_image = draw_bounding_boxes(image, boxes, labels, scores, ("__background__","basketball","volleyball")).astype(np.uint8)
+
+            cv2.imshow("img", drawn_image)
+            # Image.fromarray(drawn_image).save("./a.jpg") 
+            key = cv2.waitKey()
+            if key == ord("q"):
+                break
+
+        # Image.fromarray(drawn_image).save("./a.jpg")
 
 def cap_test():
-    import cv2 as cv
     # cap = cv.VideoCapture("./test.mp4")
-    cap = cv.VideoCapture(0)
+    cap = cv2.VideoCapture(0)
     net = BasketNet()
     
     net.load_state_dict(torch.load("./ckpt/61.pth",map_location='cpu'))
@@ -70,7 +82,7 @@ def cap_test():
         if not ret:
             break
         height,width,_ = frame.shape
-        cv_img = cv.cvtColor(frame,cv.COLOR_BGR2RGB)
+        cv_img = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
         img = Image.fromarray(cv_img)
         img = transform(img)
         img = img.unsqueeze(0)
@@ -83,14 +95,16 @@ def cap_test():
             output = post_process(pred_confidence,pred_bbox, width=width, height=height)[0]
             
             boxes, labels, scores = [o.to("cpu").numpy() for o in output]
-            
+            if len(labels)>0:
+                print(boxes)
             drawn_image = draw_bounding_boxes(frame, boxes, labels, scores, ("__background__","basketball","volleyball")).astype(np.uint8)
-            cv.imshow("img",drawn_image)
+            cv2.imshow("img",drawn_image)
             #Image.fromarray(drawn_image).save("./a.jpg")
-        key = cv.waitKey(1)
+        key = cv2.waitKey(1)
         if key == ord("q"):
             break
-    cv.destroyAllWindows()
+    cv2.destroyAllWindows()
     cap.release()
 if __name__ == "__main__":
-    cap_test()
+    # cap_test()
+    pic_test()
