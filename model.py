@@ -153,7 +153,7 @@ class BasketNet(nn.Module):
             return (cls,loc) #  (2,1111,3) (2,1111,4)
 
 
-from torchsummary import summary
+# from torchsummary import summary
 if __name__ == '__main__':
     model = BasketNet()
-    summary(model,(3,512,512),device = "cpu")
+    # summary(model,(3,512,512),device = "cpu")

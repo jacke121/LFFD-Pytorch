@@ -7,7 +7,6 @@
 @LastEditTime: 2019-10-01 10:03:36
 '''
 import torch
-import torchvision
 #from vgg_ssd import build_ssd_model
 from model import BasketNet
 from torchvision import transforms
@@ -59,10 +58,11 @@ def pic_test():
 
 def cap_test():
     import cv2 as cv
-    cap = cv.VideoCapture("./test.mp4")
+    # cap = cv.VideoCapture("./test.mp4")
+    cap = cv.VideoCapture(0)
     net = BasketNet()
     
-    net.load_state_dict(torch.load("./ckpt/518.pth",map_location='cpu'))
+    net.load_state_dict(torch.load("./ckpt/61.pth",map_location='cpu'))
     net.cuda()
     net.eval()
     while True:
